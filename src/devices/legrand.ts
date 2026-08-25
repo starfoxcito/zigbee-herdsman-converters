@@ -817,4 +817,28 @@ export const definitions: DefinitionWithExtend[] = [
             await reporting.bind(endpoint, coordinatorEndpoint, ["genPowerCfg", "genOnOff", "genLevelCtrl", "genScenes"]);
         },
     },
+    {
+        zigbeeModel: [
+            MODEL_ID + "\u0000".repeat(PAD), // NUL-padded: what the device actually reports
+            MODEL_ID + " ".repeat(PAD), // space-padded, in case the firmware really uses spaces
+            MODEL_ID.trim(), // trimmed, for Z2M's normalized-modelID matching
+        ],
+        model: "WNRCB46WH",
+        vendor: "Legrand",
+        description: "Wired 4 scenes control",
+        meta: { publishDuplicateTransaction: true },
+        fromZigbee: [fz.identify, fzLocal.command_recall_by_groupid],
+        toZigbee: [],
+        exposes: [e.action(["identify", "button_1", "button_2", "button_3", "button_4"])],
+        configure: async (device, coordinatorEndpoint) => {
+            const endpoint = device.getEndpoint(1);
+            const clusters = [];
+            if (endpoint.supportsInputCluster("genIdentify")) clusters.push("genIdentify");
+            if (endpoint.supportsOutputCluster("genScenes")) clusters.push("genScenes");
+            if (endpoint.supportsInputCluster("genBinaryInput")) clusters.push("genBinaryInput");
+            if (clusters.length > 0) {
+                await reporting.bind(endpoint, coordinatorEndpoint, clusters);
+            }
+        },
+    }
 ];
